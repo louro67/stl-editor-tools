@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = ["crates/core", "crates/cli", "crates/plugin"]
+default-members = ["crates/core", "crates/cli"]
+
+[workspace.package]
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+authors = ["Jake Mathews"]
+repository = "https://github.com/JakeMathews/mesh-solidify"
+rust-version = "1.85"
+
+[workspace.dependencies]
+mesh-solidify = { path = "crates/core", version = "0.2.0", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+debug = false
+panic = "abort"
+
+[profile.release.package.solidcraft-mesh-solidify]
+opt-level = 3

@@ -1,0 +1,11 @@
+*.stl
+*.3mf
+*.npy
+*.png
+!docs/images/*.png
+build/
+dist/
+target/
+*.egg-info/
+__pycache__/
+.venv/
