@@ -1,0 +1,19 @@
+[package]
+name = "solidcraft-mesh-solidify"
+description = "SolidCraft plugin: STL repair and native mesh/solid editing tools."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Single-threaded: the plugin host gives one thread and no WASI.
+mesh-solidify = { workspace = true }
+serde.workspace = true
+serde_json.workspace = true
+wit-bindgen = { version = "0.63", default-features = false, features = ["macros", "realloc"] }

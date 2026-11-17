@@ -1,0 +1,24 @@
+[package]
+name = "mesh-solidify"
+description = "Turn broken meshes (holes, open shells, self-intersections) into one watertight, printable solid."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+keywords = ["mesh", "stl", "3d-printing", "watertight", "winding-number"]
+categories = ["graphics", "science"]
+readme = "../../README.md"
+
+[lib]
+name = "mesh_solidify"
+
+[features]
+default = ["parallel"]
+# Use all cores (rayon). Off for the WebAssembly plugin, which is single-threaded.
+parallel = ["dep:rayon"]
+
+[dependencies]
+serde.workspace = true
+rayon = { version = "1", optional = true }

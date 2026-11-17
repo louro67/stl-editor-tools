@@ -1,0 +1,363 @@
+{
+  "id": "mesh-solidify",
+  "name": "STL Editor Tools",
+  "version": "0.3.1",
+  "description": "STL mesh repair plus native SolidCraft tools for mesh conversion, scaling, splitting, face removal, press-pull and moving bodies.",
+  "capabilities": [
+    "commands@0.1"
+  ],
+  "runtime": {
+    "module": "mesh-solidify.wasm",
+    "commands": [
+      "face.delete",
+      "mesh.convert",
+      "model.mesh",
+      "selection.get",
+      "solid.move",
+      "solid.press_pull",
+      "solid.scale",
+      "solid.split_body",
+      "timeline.add"
+    ],
+    "limits": {
+      "fuel": 100000000000,
+      "memory_mib": 128,
+      "deadline_ms": 30000
+    },
+    "entries": [
+      {
+        "name": "solidify",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Solidify Mesh…"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Mesh body to rebuild. Empty uses the selected body."
+            },
+            "scale": {
+              "type": "number",
+              "default": 0.1,
+              "exclusiveMinimum": 0,
+              "title": "Scale",
+              "description": "Uniform scale for the result: 0.1 is 10%."
+            },
+            "voxel": {
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "title": "Detail (mm)",
+              "description": "Grid spacing in output mm. 0 picks the finest that fits the voxel budget."
+            },
+            "min_feature": {
+              "type": "number",
+              "default": 0,
+              "minimum": 0,
+              "title": "Thicken (mm)",
+              "description": "Offset the surface outward so thin parts survive slicing."
+            },
+            "iso": {
+              "type": "number",
+              "default": 0.5,
+              "exclusiveMinimum": 0,
+              "exclusiveMaximum": 1,
+              "title": "Fill threshold",
+              "description": "Winding-number threshold for inside. Lower fills more."
+            },
+            "target_faces": {
+              "type": "integer",
+              "default": 20000,
+              "minimum": 100,
+              "maximum": 30000,
+              "title": "Triangles",
+              "description": "Output triangle budget (SolidCraft 0.41 accepts about 30,000 from a plugin)."
+            },
+            "fair_tau": {
+              "type": "number",
+              "default": 0.5,
+              "minimum": 0,
+              "title": "Patch smoothing",
+              "description": "Vertices farther than this many voxels from the input are hole patches and get smoothed. 0 turns it off."
+            },
+            "fair_grow": {
+              "type": "integer",
+              "default": 2,
+              "minimum": 0,
+              "maximum": 10,
+              "title": "Smoothing rings",
+              "description": "Extra rings smoothed around each patch."
+            },
+            "max_voxels": {
+              "type": "integer",
+              "default": 1500000,
+              "minimum": 1000,
+              "maximum": 2000000,
+              "title": "Voxel budget",
+              "description": "Largest grid when Detail is 0. More is finer but slower; SolidCraft 0.41 stops a plugin after a fixed amount of work, about 2,000,000 here."
+            }
+          }
+        }
+      },
+      {
+        "name": "inspect",
+        "effect": "read",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Inspect Mesh…"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Mesh body to check. Empty uses the selected body."
+            },
+            "scale": {
+              "type": "number",
+              "default": 1,
+              "exclusiveMinimum": 0,
+              "title": "Scale"
+            }
+          }
+        }
+      },
+      {
+        "name": "convert",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Convert Mesh to Solid"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Empty uses the selected body."
+            }
+          }
+        }
+      },
+      {
+        "name": "scale",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Scale Body"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Empty uses the selected body."
+            },
+            "uniform": {
+              "type": "boolean",
+              "default": true,
+              "title": "Uniform scale"
+            },
+            "factor": {
+              "type": "number",
+              "default": 1.0,
+              "exclusiveMinimum": 0,
+              "title": "Scale factor"
+            },
+            "fx": {
+              "type": "number",
+              "default": 1.0,
+              "exclusiveMinimum": 0,
+              "title": "X factor"
+            },
+            "fy": {
+              "type": "number",
+              "default": 1.0,
+              "exclusiveMinimum": 0,
+              "title": "Y factor"
+            },
+            "fz": {
+              "type": "number",
+              "default": 1.0,
+              "exclusiveMinimum": 0,
+              "title": "Z factor"
+            }
+          }
+        }
+      },
+      {
+        "name": "split",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Split Body by Plane"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Empty uses the selected body."
+            },
+            "axis": {
+              "type": "string",
+              "enum": [
+                "XY",
+                "XZ",
+                "YZ"
+              ],
+              "default": "XY",
+              "title": "Plane"
+            },
+            "offset": {
+              "type": "number",
+              "default": 0,
+              "title": "Offset (mm)"
+            }
+          }
+        }
+      },
+      {
+        "name": "delete_face",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Delete Face"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Empty uses the selected body."
+            },
+            "x": {
+              "type": "number",
+              "default": 0,
+              "title": "Point X (mm)"
+            },
+            "y": {
+              "type": "number",
+              "default": 0,
+              "title": "Point Y (mm)"
+            },
+            "z": {
+              "type": "number",
+              "default": 0,
+              "title": "Point Z (mm)"
+            },
+            "heal": {
+              "type": "boolean",
+              "default": true,
+              "title": "Heal gap"
+            }
+          }
+        }
+      },
+      {
+        "name": "press_pull",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Press Pull Face"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Empty uses the selected body."
+            },
+            "x": {
+              "type": "number",
+              "default": 0,
+              "title": "Face point X (mm)"
+            },
+            "y": {
+              "type": "number",
+              "default": 0,
+              "title": "Face point Y (mm)"
+            },
+            "z": {
+              "type": "number",
+              "default": 0,
+              "title": "Face point Z (mm)"
+            },
+            "distance": {
+              "type": "number",
+              "default": 1,
+              "title": "Distance (mm)"
+            }
+          }
+        }
+      },
+      {
+        "name": "move",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Move Body"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Empty uses the selected body."
+            },
+            "dx": {
+              "type": "number",
+              "default": 0,
+              "title": "X (mm)"
+            },
+            "dy": {
+              "type": "number",
+              "default": 0,
+              "title": "Y (mm)"
+            },
+            "dz": {
+              "type": "number",
+              "default": 0,
+              "title": "Z (mm)"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

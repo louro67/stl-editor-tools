@@ -1,0 +1,31 @@
+name: Build STL Editor Tools
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  build-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter código
+        uses: actions/checkout@v4
+      - name: Instalar Rust e alvo WASM
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Instalar wasm-tools
+        run: cargo install wasm-tools --locked
+      - name: Compilar e validar plugin
+        run: ./scripts/build-plugin.sh
+      - name: Disponibilizar ZIP instalável
+        uses: actions/upload-artifact@v4
+        with:
+          name: STL-Editor-Tools-0.3.1-WASM
+          path: dist/mesh-solidify-plugin.zip
+          if-no-files-found: error
+          retention-days: 14

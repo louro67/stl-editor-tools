@@ -1,0 +1,20 @@
+[package]
+name = "mesh-solidify-cli"
+description = "Command-line mesh-solidify: turn a broken mesh into one watertight, printable solid."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "mesh-solidify"
+path = "src/main.rs"
+
+[dependencies]
+mesh-solidify = { workspace = true, features = ["parallel"] }
+serde_json.workspace = true
+clap = { version = "4", features = ["derive"] }
+rayon = "1"
+zip = { version = "2", default-features = false, features = ["deflate"] }
