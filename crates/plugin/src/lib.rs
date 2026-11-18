@@ -367,8 +367,8 @@ impl exports::craft::plugin::entry::Guest for Plugin {
             "convert" => do_convert(&params),
             "scale" => do_scale(&params),
             "split" => do_split(&params),
-            "delete_face" => do_delete_face(&params),
-            "press_pull" => do_press_pull(&params),
+            "delete-face" => do_delete_face(&params),
+            "press-pull" => do_press_pull(&params),
             "move" => do_move(&params),
             other => Err(invalid("entry", format!("unknown entry {other:?}"))),
         }
