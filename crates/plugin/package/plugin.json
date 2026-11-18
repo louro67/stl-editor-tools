@@ -179,25 +179,25 @@
             },
             "factor": {
               "type": "number",
-              "default": 1.0,
+              "default": 1,
               "exclusiveMinimum": 0,
               "title": "Scale factor"
             },
             "fx": {
               "type": "number",
-              "default": 1.0,
+              "default": 1,
               "exclusiveMinimum": 0,
               "title": "X factor"
             },
             "fy": {
               "type": "number",
-              "default": 1.0,
+              "default": 1,
               "exclusiveMinimum": 0,
               "title": "Y factor"
             },
             "fz": {
               "type": "number",
-              "default": 1.0,
+              "default": 1,
               "exclusiveMinimum": 0,
               "title": "Z factor"
             }
@@ -241,7 +241,7 @@
         }
       },
       {
-        "name": "delete_face",
+        "name": "delete-face",
         "effect": "edit",
         "slots": [
           {
@@ -282,7 +282,7 @@
         }
       },
       {
-        "name": "press_pull",
+        "name": "press-pull",
         "effect": "edit",
         "slots": [
           {
