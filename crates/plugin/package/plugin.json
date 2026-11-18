@@ -2,7 +2,7 @@
   "id": "mesh-solidify",
   "name": "STL Editor Tools",
   "version": "0.3.1",
-  "description": "STL mesh repair plus native SolidCraft tools for mesh conversion, scaling, splitting, face removal, press-pull and moving bodies.",
+  "description": "Native STL mesh operations: solidify, inspect, clean duplicate/degenerate faces, smooth vertices, reduce triangle count and offset the surface.",
   "capabilities": [
     "commands@0.1"
   ],
@@ -134,12 +134,12 @@
         }
       },
       {
-        "name": "convert",
+        "name": "clean-mesh",
         "effect": "edit",
         "slots": [
           {
             "kind": "menu",
-            "name": "Convert Mesh to Solid"
+            "name": "Clean Mesh"
           }
         ],
         "input_schema": {
@@ -149,18 +149,25 @@
               "type": "string",
               "default": "",
               "title": "Body",
-              "description": "Empty uses the selected body."
+              "description": "Mesh to edit. Empty uses the selected body."
+            },
+            "area_epsilon": {
+              "type": "number",
+              "default": 1e-10,
+              "minimum": 0,
+              "title": "Minimum face area",
+              "description": "Faces with area at or below this value are removed."
             }
           }
         }
       },
       {
-        "name": "scale",
+        "name": "smooth-mesh",
         "effect": "edit",
         "slots": [
           {
             "kind": "menu",
-            "name": "Scale Body"
+            "name": "Smooth Mesh"
           }
         ],
         "input_schema": {
@@ -170,124 +177,37 @@
               "type": "string",
               "default": "",
               "title": "Body",
-              "description": "Empty uses the selected body."
+              "description": "Mesh to edit. Empty uses the selected body."
             },
-            "uniform": {
-              "type": "boolean",
-              "default": true,
-              "title": "Uniform scale"
+            "iterations": {
+              "type": "integer",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 100,
+              "title": "Iterations"
             },
             "factor": {
               "type": "number",
-              "default": 1,
+              "default": 0.35,
               "exclusiveMinimum": 0,
-              "title": "Scale factor"
+              "maximum": 1,
+              "title": "Smoothing strength"
             },
-            "fx": {
-              "type": "number",
-              "default": 1,
-              "exclusiveMinimum": 0,
-              "title": "X factor"
-            },
-            "fy": {
-              "type": "number",
-              "default": 1,
-              "exclusiveMinimum": 0,
-              "title": "Y factor"
-            },
-            "fz": {
-              "type": "number",
-              "default": 1,
-              "exclusiveMinimum": 0,
-              "title": "Z factor"
-            }
-          }
-        }
-      },
-      {
-        "name": "split",
-        "effect": "edit",
-        "slots": [
-          {
-            "kind": "menu",
-            "name": "Split Body by Plane"
-          }
-        ],
-        "input_schema": {
-          "type": "object",
-          "properties": {
-            "body": {
-              "type": "string",
-              "default": "",
-              "title": "Body",
-              "description": "Empty uses the selected body."
-            },
-            "axis": {
-              "type": "string",
-              "enum": [
-                "XY",
-                "XZ",
-                "YZ"
-              ],
-              "default": "XY",
-              "title": "Plane"
-            },
-            "offset": {
-              "type": "number",
-              "default": 0,
-              "title": "Offset (mm)"
-            }
-          }
-        }
-      },
-      {
-        "name": "delete-face",
-        "effect": "edit",
-        "slots": [
-          {
-            "kind": "menu",
-            "name": "Delete Face"
-          }
-        ],
-        "input_schema": {
-          "type": "object",
-          "properties": {
-            "body": {
-              "type": "string",
-              "default": "",
-              "title": "Body",
-              "description": "Empty uses the selected body."
-            },
-            "x": {
-              "type": "number",
-              "default": 0,
-              "title": "Point X (mm)"
-            },
-            "y": {
-              "type": "number",
-              "default": 0,
-              "title": "Point Y (mm)"
-            },
-            "z": {
-              "type": "number",
-              "default": 0,
-              "title": "Point Z (mm)"
-            },
-            "heal": {
+            "preserve_boundary": {
               "type": "boolean",
               "default": true,
-              "title": "Heal gap"
+              "title": "Preserve open edges"
             }
           }
         }
       },
       {
-        "name": "press-pull",
+        "name": "decimate-mesh",
         "effect": "edit",
         "slots": [
           {
             "kind": "menu",
-            "name": "Press Pull Face"
+            "name": "Reduce Mesh"
           }
         ],
         "input_schema": {
@@ -297,63 +217,40 @@
               "type": "string",
               "default": "",
               "title": "Body",
-              "description": "Empty uses the selected body."
+              "description": "Mesh to edit. Empty uses the selected body."
             },
-            "x": {
-              "type": "number",
-              "default": 0,
-              "title": "Face point X (mm)"
-            },
-            "y": {
-              "type": "number",
-              "default": 0,
-              "title": "Face point Y (mm)"
-            },
-            "z": {
-              "type": "number",
-              "default": 0,
-              "title": "Face point Z (mm)"
+            "target_faces": {
+              "type": "integer",
+              "default": 1000,
+              "minimum": 100,
+              "title": "Target triangles"
+            }
+          }
+        }
+      },
+      {
+        "name": "offset-mesh",
+        "effect": "edit",
+        "slots": [
+          {
+            "kind": "menu",
+            "name": "Offset Mesh Surface"
+          }
+        ],
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "body": {
+              "type": "string",
+              "default": "",
+              "title": "Body",
+              "description": "Mesh to edit. Empty uses the selected body."
             },
             "distance": {
               "type": "number",
-              "default": 1,
-              "title": "Distance (mm)"
-            }
-          }
-        }
-      },
-      {
-        "name": "move",
-        "effect": "edit",
-        "slots": [
-          {
-            "kind": "menu",
-            "name": "Move Body"
-          }
-        ],
-        "input_schema": {
-          "type": "object",
-          "properties": {
-            "body": {
-              "type": "string",
-              "default": "",
-              "title": "Body",
-              "description": "Empty uses the selected body."
-            },
-            "dx": {
-              "type": "number",
-              "default": 0,
-              "title": "X (mm)"
-            },
-            "dy": {
-              "type": "number",
-              "default": 0,
-              "title": "Y (mm)"
-            },
-            "dz": {
-              "type": "number",
-              "default": 0,
-              "title": "Z (mm)"
+              "default": 0.5,
+              "title": "Offset distance (mm)",
+              "description": "Positive moves along averaged vertex normals; negative moves inward."
             }
           }
         }
