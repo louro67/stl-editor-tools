@@ -1,7 +1,7 @@
 {
-  "id": "mesh-solidify",
+  "id": "stl-editor-tools",
   "name": "STL Mesh Studio",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "description": "Native STL mesh operations: solidify, inspect, clean duplicate/degenerate faces, smooth vertices, reduce triangle count and offset the surface.",
   "capabilities": [
     "commands@0.1"
