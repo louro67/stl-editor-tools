@@ -21,7 +21,7 @@ jobs:
       - name: Instalar wasm-tools
         run: cargo install wasm-tools --locked
       - name: Compilar e validar plugin
-        run: ./scripts/build-plugin.sh
+        run: bash ./scripts/build-plugin.sh
       - name: Disponibilizar ZIP instalável
         uses: actions/upload-artifact@v4
         with:
