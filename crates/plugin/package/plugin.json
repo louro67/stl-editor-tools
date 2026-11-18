@@ -31,7 +31,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "STL • Solidify Mesh…"
+            "name": "STL • Reparar e Solidificar…"
           }
         ],
         "input_schema": {
@@ -112,7 +112,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "STL • Inspect Mesh…"
+            "name": "STL • Analisar Malha…"
           }
         ],
         "input_schema": {
@@ -139,7 +139,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "STL • Clean Mesh"
+            "name": "STL • Limpar Malha"
           }
         ],
         "input_schema": {
@@ -167,7 +167,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "STL • Smooth Mesh"
+            "name": "STL • Suavizar Malha"
           }
         ],
         "input_schema": {
@@ -207,7 +207,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "STL • Reduce Mesh"
+            "name": "STL • Reduzir Malha"
           }
         ],
         "input_schema": {
@@ -234,7 +234,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "STL • Offset Surface"
+            "name": "STL • Deslocar Superfície"
           }
         ],
         "input_schema": {
