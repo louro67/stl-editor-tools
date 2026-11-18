@@ -271,10 +271,9 @@ fn do_inspect(params: &str) -> Result<String, PluginError> {
 
 
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 #[serde(default)]
 struct BodyInput { body: String }
-impl Default for BodyInput { fn default() -> Self { Self { body: String::new() } } }
 
 #[derive(Deserialize)]
 #[serde(default)]
