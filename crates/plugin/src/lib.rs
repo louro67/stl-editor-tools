@@ -359,6 +359,123 @@ fn do_move(params:&str)->Result<String,PluginError>{
     Ok(json!({"operation":"solid.move","body":body,"translation":v,"result":out}).to_string())
 }
 
+
+
+#[derive(Deserialize)]
+#[serde(default)]
+struct CleanInput { body:String, area_epsilon:f64 }
+impl Default for CleanInput { fn default()->Self { Self { body:String::new(), area_epsilon:1e-10 } } }
+
+#[derive(Deserialize)]
+#[serde(default)]
+struct SmoothInput { body:String, iterations:usize, factor:f64, preserve_boundary:bool }
+impl Default for SmoothInput { fn default()->Self { Self { body:String::new(), iterations:5, factor:0.35, preserve_boundary:true } } }
+
+#[derive(Deserialize)]
+#[serde(default)]
+struct DecimateInput { body:String, target_faces:usize }
+impl Default for DecimateInput { fn default()->Self { Self { body:String::new(), target_faces:1000 } } }
+
+#[derive(Deserialize)]
+#[serde(default)]
+struct OffsetInput { body:String, distance:f64 }
+impl Default for OffsetInput { fn default()->Self { Self { body:String::new(), distance:0.5 } } }
+
+fn add_mesh_result(mesh:&Mesh, source:&str, suffix:&str)->Result<String,PluginError>{
+    if mesh.f.is_empty() { return Err(failed("operation produced an empty mesh")); }
+    let name=format!("{source} {suffix}");
+    let args=mesh_feature(mesh,&name);
+    if args.len()>MAX_ARGS { return Err(failed("result is too large for SolidCraft's 1 MiB command limit; reduce the mesh first")); }
+    let added=commands::run("timeline.add",&args)?;
+    let feature:Value=serde_json::from_str(&added).unwrap_or(Value::Null);
+    Ok(json!({"source_body":source,"new_body":name,"vertices":mesh.v.len(),"triangles":mesh.f.len(),"feature":feature}).to_string())
+}
+
+// Native triangle cleanup: removes zero-area and duplicate faces, then unused vertices.
+fn do_clean_mesh(params:&str)->Result<String,PluginError>{
+    let input:CleanInput=serde_json::from_str(params).map_err(|e|invalid("params",e.to_string()))?;
+    if !input.area_epsilon.is_finite() || input.area_epsilon<0.0 { return Err(invalid("area_epsilon","must be zero or greater")); }
+    let body=pick_body(&input.body)?;
+    let original=read_body(&body)?;
+    let mut out=Mesh { v:original.v.clone(), f:Vec::with_capacity(original.f.len()) };
+    let mut seen=std::collections::HashSet::<[u32;3]>::new();
+    let mut removed_degenerate=0usize;
+    let mut removed_duplicate=0usize;
+    for t in &original.f {
+        let a=out.v[t[0] as usize]; let b=out.v[t[1] as usize]; let c=out.v[t[2] as usize];
+        let area2=mesh_solidify::mesh::norm(mesh_solidify::mesh::cross(mesh_solidify::mesh::sub(b,a),mesh_solidify::mesh::sub(c,a)));
+        if !area2.is_finite() || area2*0.5<=input.area_epsilon { removed_degenerate+=1; continue; }
+        let mut key=*t; key.sort_unstable();
+        if !seen.insert(key) { removed_duplicate+=1; continue; }
+        out.f.push(*t);
+    }
+    out.compact();
+    let mut result:Value=serde_json::from_str(&add_mesh_result(&out,&body,"cleaned")?).unwrap();
+    let o=result.as_object_mut().unwrap();
+    o.insert("removed_degenerate_faces".into(),json!(removed_degenerate));
+    o.insert("removed_duplicate_faces".into(),json!(removed_duplicate));
+    o.insert("input_triangles".into(),json!(original.f.len()));
+    Ok(result.to_string())
+}
+
+// Laplacian vertex smoothing performed directly on the triangle mesh.
+fn do_smooth_mesh(params:&str)->Result<String,PluginError>{
+    let input:SmoothInput=serde_json::from_str(params).map_err(|e|invalid("params",e.to_string()))?;
+    if input.iterations==0 || input.iterations>100 { return Err(invalid("iterations","choose 1 to 100")); }
+    if !input.factor.is_finite() || input.factor<=0.0 || input.factor>1.0 { return Err(invalid("factor","must be greater than 0 and at most 1")); }
+    let body=pick_body(&input.body)?;
+    let mut out=read_body(&body)?;
+    let mut boundary=vec![false;out.v.len()];
+    if input.preserve_boundary {
+        let mut edges=std::collections::HashMap::<(u32,u32),usize>::new();
+        for t in &out.f { for k in 0..3 { let a=t[k]; let b=t[(k+1)%3]; let e=if a<b {(a,b)} else {(b,a)}; *edges.entry(e).or_insert(0)+=1; } }
+        for ((a,b),count) in edges { if count==1 { boundary[a as usize]=true; boundary[b as usize]=true; } }
+    }
+    for _ in 0..input.iterations {
+        let neighbors=out.vertex_neighbors();
+        let old=out.v.clone();
+        for i in 0..out.v.len() {
+            if boundary[i] || neighbors[i].is_empty() { continue; }
+            let mut avg=[0.0;3];
+            for &j in &neighbors[i] { for k in 0..3 { avg[k]+=old[j as usize][k]; } }
+            for k in 0..3 { avg[k]/=neighbors[i].len() as f64; out.v[i][k]=old[i][k]+(avg[k]-old[i][k])*input.factor; }
+        }
+    }
+    add_mesh_result(&out,&body,"smoothed")
+}
+
+// Quadric-error mesh reduction, implemented by this plugin's own mesh library.
+fn do_decimate_mesh(params:&str)->Result<String,PluginError>{
+    let input:DecimateInput=serde_json::from_str(params).map_err(|e|invalid("params",e.to_string()))?;
+    if input.target_faces<100 { return Err(invalid("target_faces","minimum is 100")); }
+    let body=pick_body(&input.body)?;
+    let mut out=read_body(&body)?;
+    let before=out.f.len();
+    if input.target_faces<before { simplify(&mut out,input.target_faces); }
+    let mut result:Value=serde_json::from_str(&add_mesh_result(&out,&body,"reduced")?).unwrap();
+    result.as_object_mut().unwrap().insert("input_triangles".into(),json!(before));
+    Ok(result.to_string())
+}
+
+// Vertex-normal offset, calculated from the actual input triangles.
+fn do_offset_mesh(params:&str)->Result<String,PluginError>{
+    let input:OffsetInput=serde_json::from_str(params).map_err(|e|invalid("params",e.to_string()))?;
+    if !input.distance.is_finite() { return Err(invalid("distance","must be finite")); }
+    let body=pick_body(&input.body)?;
+    let mut out=read_body(&body)?;
+    let mut normals=vec![[0.0;3];out.v.len()];
+    for t in &out.f {
+        let a=out.v[t[0] as usize]; let b=out.v[t[1] as usize]; let c=out.v[t[2] as usize];
+        let n=mesh_solidify::mesh::cross(mesh_solidify::mesh::sub(b,a),mesh_solidify::mesh::sub(c,a));
+        for &i in t { for k in 0..3 { normals[i as usize][k]+=n[k]; } }
+    }
+    for i in 0..out.v.len() {
+        let len=mesh_solidify::mesh::norm(normals[i]);
+        if len>1e-15 { for k in 0..3 { out.v[i][k]+=normals[i][k]/len*input.distance; } }
+    }
+    add_mesh_result(&out,&body,"offset")
+}
+
 impl exports::craft::plugin::entry::Guest for Plugin {
     fn execute(entry: String, params: String) -> Result<String, PluginError> {
         match entry.as_str() {
@@ -370,6 +487,10 @@ impl exports::craft::plugin::entry::Guest for Plugin {
             "delete-face" => do_delete_face(&params),
             "press-pull" => do_press_pull(&params),
             "move" => do_move(&params),
+            "clean-mesh" => do_clean_mesh(&params),
+            "smooth-mesh" => do_smooth_mesh(&params),
+            "decimate-mesh" => do_decimate_mesh(&params),
+            "offset-mesh" => do_offset_mesh(&params),
             other => Err(invalid("entry", format!("unknown entry {other:?}"))),
         }
     }
