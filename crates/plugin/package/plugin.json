@@ -1,6 +1,6 @@
 {
   "id": "mesh-solidify",
-  "name": "STL Editor Tools",
+  "name": "STL Mesh Studio",
   "version": "0.3.1",
   "description": "Native STL mesh operations: solidify, inspect, clean duplicate/degenerate faces, smooth vertices, reduce triangle count and offset the surface.",
   "capabilities": [
@@ -31,7 +31,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "Solidify Mesh…"
+            "name": "STL • Solidify Mesh…"
           }
         ],
         "input_schema": {
@@ -112,7 +112,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "Inspect Mesh…"
+            "name": "STL • Inspect Mesh…"
           }
         ],
         "input_schema": {
@@ -139,7 +139,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "Clean Mesh"
+            "name": "STL • Clean Mesh"
           }
         ],
         "input_schema": {
@@ -167,7 +167,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "Smooth Mesh"
+            "name": "STL • Smooth Mesh"
           }
         ],
         "input_schema": {
@@ -207,7 +207,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "Reduce Mesh"
+            "name": "STL • Reduce Mesh"
           }
         ],
         "input_schema": {
@@ -234,7 +234,7 @@
         "slots": [
           {
             "kind": "menu",
-            "name": "Offset Mesh Surface"
+            "name": "STL • Offset Surface"
           }
         ],
         "input_schema": {
