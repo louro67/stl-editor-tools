@@ -129,12 +129,23 @@ fn pick_body(name: &str) -> Result<String, PluginError> {
 }
 
 fn read_body(body: &str) -> Result<Mesh, PluginError> {
-    let r = run("model.mesh", &json!({"body": body})).map_err(|e| match e {
-        PluginError::CommandFailed(f) if f.reason.contains("budget") => failed(format!(
-            "{body} has more than 2,730 triangles, the most SolidCraft 0.41 lets a plugin read. \
-             Use the mesh-solidify command line for this mesh, then insert its result."
-        )),
-        other => other,
+    let r = run("model.mesh", &json!({"body": body})).map_err(|e| {
+        // SolidCraft can report the transfer-budget failure as either a command failure
+        // or an invalid-parameters error. Inspect the complete diagnostic so every
+        // mesh operation receives the same actionable Portuguese message.
+        let diagnostic = format!("{e:?}").to_ascii_lowercase();
+        if diagnostic.contains("transfer budget")
+            || diagnostic.contains("mesh exceeds")
+            || diagnostic.contains("budget")
+        {
+            failed(format!(
+                "Não foi possível ler a malha «{body}»: é demasiado grande para o limite de transferência do SolidCraft. \
+                 Reduza a malha para cerca de 2.700 triângulos ou menos e tente novamente. \
+                 O modelo original não foi alterado."
+            ))
+        } else {
+            e
+        }
     })?;
     let pos = r["positions"]
         .as_array()
